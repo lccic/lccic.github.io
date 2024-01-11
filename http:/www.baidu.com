@@ -18,11 +18,11 @@
   
     <meta property="og:type" content="article">
 <meta property="og:title" content="test">
-<meta property="og:url" content="http://example.com/2024/01/12/test/index.html">
+<meta property="og:url" content="http://www.baidu.com/">
 <meta property="og:site_name" content="Hexo">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-01-11T16:52:55.000Z">
-<meta property="article:modified_time" content="2024-01-11T17:01:09.686Z">
+<meta property="article:modified_time" content="2024-01-11T17:03:54.310Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="PS3">
 <meta property="article:tag" content="Games">
@@ -320,7 +320,7 @@
   <div class="license-box my-3">
     <div class="license-title">
       <div>test</div>
-      <div>http://example.com/2024/01/12/test/</div>
+      <div>http://example.com/http:/www.baidu.com</div>
     </div>
     <div class="license-meta">
       

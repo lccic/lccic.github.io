@@ -16,22 +16,21 @@
   <meta name="author" content="泡泡爱编程">
   <meta name="keywords" content="">
   
-    <meta name="description" content="运行时数据区1、程序计数器 是一块较小的内存空间 字节码解释器通过改变这个计数器的值来选取下一条需要执行的字节码指令 分支、循环、跳转、异常、线程恢复都需要依赖这个计数器来完成 每条线程都有一个独立的程序计数器，是线程私有的内存区域 唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域 如果线程正在执行的是一个Java方法，记录的是正在执行的字节码指令的地址，如果正在执行native方法，记">
+    <meta name="description" content="1、根节点枚举问题：根节点枚举采用逐个遍历耗费的时间长，所有垃圾收集器在根节点枚举会发生STW，从而导致停顿时间长 解决方案：通过OOpMap解决。当类加载完成后，HotSpot会把对象内什么偏移量上是什么类型的数据计算出来，在即时编译的过程中，也会在特定位置记录下栈里和寄存器里哪些位置是引用。 2、安全点 导致OopMap变化的指令非常多，如果为每一条指令生成OopMap，需要大量额外的存储空间">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Java内存区域">
-<meta property="og:url" content="https://lccic.github.io/2024/01/12/%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F/index.html">
+<meta property="og:title" content="HotSpot算法实现细节">
+<meta property="og:url" content="https://lccic.github.io/2024/01/21/HotSpot%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82/index.html">
 <meta property="og:site_name" content="泡泡爱编程">
-<meta property="og:description" content="运行时数据区1、程序计数器 是一块较小的内存空间 字节码解释器通过改变这个计数器的值来选取下一条需要执行的字节码指令 分支、循环、跳转、异常、线程恢复都需要依赖这个计数器来完成 每条线程都有一个独立的程序计数器，是线程私有的内存区域 唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域 如果线程正在执行的是一个Java方法，记录的是正在执行的字节码指令的地址，如果正在执行native方法，记">
+<meta property="og:description" content="1、根节点枚举问题：根节点枚举采用逐个遍历耗费的时间长，所有垃圾收集器在根节点枚举会发生STW，从而导致停顿时间长 解决方案：通过OOpMap解决。当类加载完成后，HotSpot会把对象内什么偏移量上是什么类型的数据计算出来，在即时编译的过程中，也会在特定位置记录下栈里和寄存器里哪些位置是引用。 2、安全点 导致OopMap变化的指令非常多，如果为每一条指令生成OopMap，需要大量额外的存储空间">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-01-11T17:28:21.000Z">
-<meta property="article:modified_time" content="2024-01-13T15:37:23.541Z">
+<meta property="article:published_time" content="2024-01-21T07:51:35.000Z">
+<meta property="article:modified_time" content="2024-01-23T07:13:12.416Z">
 <meta property="article:author" content="John Doe">
-<meta property="article:tag" content="jvm">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>Java内存区域 - 泡泡爱编程</title>
+  <title>HotSpot算法实现细节 - 泡泡爱编程</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -226,7 +225,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Java内存区域"></span>
+            <span id="subtitle" data-typed-text="HotSpot算法实现细节"></span>
           
         </div>
 
@@ -237,8 +236,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-01-12 01:28" pubdate>
-          2024年1月12日 凌晨
+        <time datetime="2024-01-21 15:51" pubdate>
+          2024年1月21日 下午
         </time>
       </span>
     
@@ -249,7 +248,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          892 字
+          1.6k 字
         
       </span>
     
@@ -260,7 +259,7 @@
         
         
         
-          8 分钟
+          14 分钟
         
       </span>
     
@@ -305,65 +304,71 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Java内存区域</h1>
+            <h1 id="seo-header">HotSpot算法实现细节</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="运行时数据区"><a href="#运行时数据区" class="headerlink" title="运行时数据区"></a>运行时数据区</h2><h3 id="1、程序计数器"><a href="#1、程序计数器" class="headerlink" title="1、程序计数器"></a>1、程序计数器</h3><ul>
-<li>是一块较小的内存空间</li>
-<li>字节码解释器通过改变这个计数器的值来选取下一条需要执行的字节码指令</li>
-<li>分支、循环、跳转、异常、线程恢复都需要依赖这个计数器来完成</li>
-<li>每条线程都有一个独立的程序计数器，是线程私有的内存区域</li>
-<li>唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域</li>
-<li>如果线程正在执行的是一个Java方法，记录的是正在执行的字节码指令的地址，如果正在执行native方法，记录的是undefined</li>
-</ul>
-<h3 id="2、Java虚拟机栈"><a href="#2、Java虚拟机栈" class="headerlink" title="2、Java虚拟机栈"></a>2、Java虚拟机栈</h3><ul>
-<li><p>是线程私有的内存区域</p>
+                <h3 id="1、根节点枚举"><a href="#1、根节点枚举" class="headerlink" title="1、根节点枚举"></a>1、根节点枚举</h3><p>问题：根节点枚举采用逐个遍历耗费的时间长，所有垃圾收集器在根节点枚举会发生STW，从而导致停顿时间长</p>
+<p>解决方案：通过OOpMap解决。当类加载完成后，HotSpot会把对象内什么偏移量上是什么类型的数据计算出来，在即时编译的过程中，也会在特定位置记录下栈里和寄存器里哪些位置是引用。</p>
+<h3 id="2、安全点"><a href="#2、安全点" class="headerlink" title="2、安全点"></a>2、安全点</h3><ul>
+<li><p>导致OopMap变化的指令非常多，如果为每一条指令生成OopMap，需要大量额外的存储空间，HotSpot并没有为每条指令都生成OopMap, 而只是在安全点记录这些信息</p>
 </li>
-<li><p>每个方法执行都会创建一个栈帧，栈帧中存储了局部变量表、操作数栈、动态链接、方法出口等信息，方法从调用到执行完毕对应着一个栈帧在虚拟机栈中从入栈到出栈的过程</p>
+<li><p>在进行垃圾收集时，用户程序必须执行到安全点才能暂停。</p>
 </li>
-<li><p>线程请求的栈深度大于虚拟机所允许的最大深度，会抛出StackOverflowError异常；如果Java虚拟机栈支持动态扩展，当栈扩展时无法申请到足够的内存就会抛出OOM异常</p>
+<li><p>安全点的选定太少会导致垃圾收集等待的时间过长，太多会导致运行时增加内存负载</p>
+</li>
+<li><p>安全点位置的选取是以“是否有让程序长时间执行的特征”来选定的，比如方法跳转、循环跳转、异常跳转</p>
 </li>
 </ul>
-<h4 id="2-1-局部变量表"><a href="#2-1-局部变量表" class="headerlink" title="2.1 局部变量表"></a>2.1 局部变量表</h4><ul>
-<li>用于存放方法参数和方法内部定义的局部变量。</li>
-<li>在Java程序被编译成class文件时，就在方法的Code属性的max_locals数据项中确定了该方法所需分配的局部变量表的最大容量</li>
-<li>以变量槽为最小单位，一个槽占用的内存空间由具体的实现决定，基本数据类型（除long和double）、reference、returnAddress（指向一条字节码指令的地址）占用一个槽，long和double占用2个槽</li>
-<li>JVM通过索引定位的方法访问局部变量表，从0到最大的变量槽数。非static方法0号槽是this，其余的会按照参数列表、方法内部定义的变量顺序和作用域依次分配变量槽</li>
-<li>为了尽可能的减少栈帧所占用的内存空间，局部变量表的变量槽是可以复用的，如果当前程序计数器的值已经超出了某个变量的作用域，这个变量对应的变量槽可以交给其他变量重用</li>
+<p>发生垃圾收集时让用户线程执行到安全点：</p>
+<ul>
+<li>抢先式中断：发生垃圾收集时，中断所有用户线程，如果发现线程中断的不在安全点，恢复线程继续执行，让它执行到安全点上</li>
+<li>主动式中断：当垃圾收集需要中断线程的时候，会设置一个标志位，各个线程执行过程中会不停的主动轮询这个标志，一但发现中断标志为真时就自己在最近的安全点上主动中断挂起。轮询标志的地方包括安全点、创建对象和其他在堆上分配内存的地方，目的是为了检查是否即将要发生垃圾收集，避免没有足够的内存分配新对象。Hotspot使用test指令完成安全点的轮询和触发线程中断。当需要暂停用户线程时，JVM把0x160100的内存页设置为不可读，线程执行到test指令时就会产生一个自陷异常信号，然后在预先注册的异常处理器中挂起线程</li>
 </ul>
-<h4 id="2-2-操作数栈"><a href="#2-2-操作数栈" class="headerlink" title="2.2 操作数栈"></a>2.2 操作数栈</h4><h3 id="3、本地方法栈"><a href="#3、本地方法栈" class="headerlink" title="3、本地方法栈"></a>3、本地方法栈</h3><ul>
-<li><p>线程私有的内存区域</p>
-</li>
-<li><p>为JVM使用到的本地方法服务</p>
-</li>
-<li><p>HotSpot将本地方法栈和虚拟机栈合二为一</p>
-</li>
-<li><p>在栈深度溢出和栈扩展失败时抛出StackOverflowError和OOM异常</p>
-</li>
+<h3 id="3、安全区域"><a href="#3、安全区域" class="headerlink" title="3、安全区域"></a>3、安全区域</h3><p>当用户线程处于Sleep或Blocked状态，无法响应JVM的中断请求，不能自己走到安全的地方中断挂起</p>
+<ul>
+<li>安全区域确保在某一段代码片段中，引用关系不会发生变化，在这个区域进行垃圾收集是安全的</li>
+<li>当用户线程执行到安全区域里的代码时，会标识自己已经进入安全区域了，垃圾收集不会管已经声明自己在安全区域的线程。当线程离开安全区域，会检查JVM是否已完成根节点枚举，如果没完成，就必须一直等待，直到收到可以离开安全区域的信号为止</li>
 </ul>
-<h3 id="4、堆"><a href="#4、堆" class="headerlink" title="4、堆"></a>4、堆</h3><ul>
-<li><p>所有线程共享的一块内存区域</p>
-</li>
-<li><p>几乎所有的对象实例都在这里分配内存</p>
-</li>
-<li><p>没有内存完成对象分配，也无法扩展时抛出OOM异常</p>
+<h3 id="4、记忆集"><a href="#4、记忆集" class="headerlink" title="4、记忆集"></a>4、记忆集</h3><ul>
+<li>用于记录从非收集区域指向收集区域的指针集合的抽象数据结构</li>
+<li>为了解决跨代引用所带来GC ROOTS扫描范围增加的问题</li>
+<li>记录的精度<ul>
+<li>字长精度：每个记录精确到一个机器字长</li>
+<li>对象精度：每个记录精确到对象</li>
+<li>卡精度：每个记录精确到一块内存区域</li>
+</ul>
 </li>
 </ul>
-<h3 id="5、方法区"><a href="#5、方法区" class="headerlink" title="5、方法区"></a>5、方法区</h3><ul>
-<li>线程共享的内存区域</li>
-<li>存储已经被JVM加载的类型信息、常量、静态变量、即时编译器编译过的代码缓存等数据</li>
-<li>如果方法区无法满足新的内存分配需求，将抛出OOM异常</li>
+<h3 id="5、卡表"><a href="#5、卡表" class="headerlink" title="5、卡表"></a>5、卡表</h3><ul>
+<li>记忆集的一种实现，采用卡精度</li>
+<li>HotSpot通过字节数组CDARD_TABLE实现，数组的每个元素都对应着其标识的内存区域中一块特定大小的内存块，这个内存块叫做卡页，大小是512字节。只要卡页存在一个以上的对象的字段存在跨代指针，就将卡表对应的数组元素的值标识为1，没有则标识为0。垃圾收集时只要筛选出卡表中为1的元素，就能知道哪些卡页内存块包含跨代指针，把它们加入到GC ROOTS中一并扫描</li>
 </ul>
-<h3 id="6、运行时常量池"><a href="#6、运行时常量池" class="headerlink" title="6、运行时常量池"></a>6、运行时常量池</h3><ul>
-<li>是方法区的一部分</li>
-<li>存放编译期生成的各种字面量、符号引用和符号引用翻译出来的直接引用，运行期间可以通过String.intern方法将新的常量放入池中</li>
-<li>无法再申请到内存时会抛出OOM异常</li>
+<h3 id="6、写屏障"><a href="#6、写屏障" class="headerlink" title="6、写屏障"></a>6、写屏障</h3><ul>
+<li>可以看作在虚拟机层面对引用类型字段赋值这个动作的AOP切面，在引用对象赋值时会产生一个环形通知，在赋值前的写屏障叫作写前屏障，在赋值后的叫写后屏障。在写屏障中完成对卡表状态的更新</li>
+<li>卡表在高并发场景下会存在伪共享问题。解决方案是不采用无条件的写屏障，先检查卡表标记，只有当卡表元素未被标记过时才将其标记为脏，jdk7之后通过-XX:+UseCondCardMark参数，决定是否开启卡表更新的条件判断。</li>
 </ul>
-<h2 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h2><ul>
-<li>不是运行时数据区的一部分</li>
-<li>受物理内存的限制抛出OOM异常</li>
+<h3 id="7、并发的可达性分析"><a href="#7、并发的可达性分析" class="headerlink" title="7、并发的可达性分析"></a>7、并发的可达性分析</h3><p>三色标记</p>
+<ul>
+<li>白色：表示对象尚未被垃圾收集器访问过</li>
+<li>黑色：表示对象已经被垃圾收集器访问过，并且这个对象的所有引用都已经扫描过</li>
+<li>灰色：表示对象已经被垃圾收集器访问过，但这个对象至少存在一个引用还没有被扫描过</li>
+</ul>
+<p>用户线程和垃圾收集线程并发情况下产生的现象：</p>
+<ul>
+<li><p>将原本消亡的对象标记为存活，会造成浮动垃圾，下次收集清理掉就行</p>
+</li>
+<li><p>把原本存活的对象标记为已死亡，会导致程序发生错误。主要有2种情况</p>
+<ul>
+<li><p>赋值器插入了一条或多条从黑色对象到白色对象的新引用</p>
+</li>
+<li><p>赋值器删除了全部从灰色对象到白色对象的直接或间接引用</p>
+</li>
+</ul>
+<p>增量更新：破坏第一个条件，当黑色对象插入新的指向白色对象的引用关系时，就将这个新插入的引用记录下来，等并发扫描结束后，再将这些记录过的引用关系中的黑色对象为根，重新扫描一次</p>
+<p>原始快照：当灰色对象要删除指向白色对象的引用关系时，就将这个要删除的引用记录下来，在并发扫描结束后，再将这些记录过的引用关系中的灰色对象为根，重新扫描一次</p>
+</li>
 </ul>
 
                 
@@ -373,34 +378,6 @@
             <div>
               <div class="post-metas my-3">
   
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/java/" class="category-chain-item">java</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-    </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/jvm/" class="print-no-link">#jvm</a>
-      
-    </div>
   
 </div>
 
@@ -410,8 +387,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Java内存区域</div>
-      <div>https://lccic.github.io/2024/01/12/运行时数据区域/</div>
+      <div>HotSpot算法实现细节</div>
+      <div>https://lccic.github.io/2024/01/21/HotSpot算法实现细节/</div>
     </div>
     <div class="license-meta">
       
@@ -423,7 +400,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2024年1月12日</div>
+          <div>2024年1月21日</div>
         </div>
       
       
@@ -455,15 +432,21 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/01/21/%E5%88%A4%E5%AE%9A%E5%AF%B9%E8%B1%A1%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95/" title="判断对象存活算法">
+                      <a href="/2024/01/23/%E7%BB%8F%E5%85%B8%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/" title="经典垃圾收集器">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">判断对象存活算法</span>
+                        <span class="hidden-mobile">经典垃圾收集器</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
                   </article>
                   <article class="post-next col-6">
                     
+                    
+                      <a href="/2024/01/21/%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/" title="垃圾收集算法">
+                        <span class="hidden-mobile">垃圾收集算法</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
                     
                   </article>
                 </div>

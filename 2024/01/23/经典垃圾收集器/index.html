@@ -16,22 +16,21 @@
   <meta name="author" content="泡泡爱编程">
   <meta name="keywords" content="">
   
-    <meta name="description" content="运行时数据区1、程序计数器 是一块较小的内存空间 字节码解释器通过改变这个计数器的值来选取下一条需要执行的字节码指令 分支、循环、跳转、异常、线程恢复都需要依赖这个计数器来完成 每条线程都有一个独立的程序计数器，是线程私有的内存区域 唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域 如果线程正在执行的是一个Java方法，记录的是正在执行的字节码指令的地址，如果正在执行native方法，记">
+    <meta name="description" content="1、Serial收集器 单线程工作的收集器。 所有收集器里额外内存消耗最小的 新生代采用复制算法，老年代采取标记整理算法 适用于客户端  2、ParNew收集器 Serial收集器的多线程版本 默认的收集线程数与处理器核心数量相同，可以通过-XX:ParallerGCThreads参数限制垃圾收集的线程数 用于服务端的新生代收集器，经常和CMS组合使用  3、Parallel Scavenge收集">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Java内存区域">
-<meta property="og:url" content="https://lccic.github.io/2024/01/12/%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F/index.html">
+<meta property="og:title" content="经典垃圾收集器">
+<meta property="og:url" content="https://lccic.github.io/2024/01/23/%E7%BB%8F%E5%85%B8%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/index.html">
 <meta property="og:site_name" content="泡泡爱编程">
-<meta property="og:description" content="运行时数据区1、程序计数器 是一块较小的内存空间 字节码解释器通过改变这个计数器的值来选取下一条需要执行的字节码指令 分支、循环、跳转、异常、线程恢复都需要依赖这个计数器来完成 每条线程都有一个独立的程序计数器，是线程私有的内存区域 唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域 如果线程正在执行的是一个Java方法，记录的是正在执行的字节码指令的地址，如果正在执行native方法，记">
+<meta property="og:description" content="1、Serial收集器 单线程工作的收集器。 所有收集器里额外内存消耗最小的 新生代采用复制算法，老年代采取标记整理算法 适用于客户端  2、ParNew收集器 Serial收集器的多线程版本 默认的收集线程数与处理器核心数量相同，可以通过-XX:ParallerGCThreads参数限制垃圾收集的线程数 用于服务端的新生代收集器，经常和CMS组合使用  3、Parallel Scavenge收集">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-01-11T17:28:21.000Z">
-<meta property="article:modified_time" content="2024-01-13T15:37:23.541Z">
+<meta property="article:published_time" content="2024-01-23T07:14:35.000Z">
+<meta property="article:modified_time" content="2024-01-24T13:53:41.826Z">
 <meta property="article:author" content="John Doe">
-<meta property="article:tag" content="jvm">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>Java内存区域 - 泡泡爱编程</title>
+  <title>经典垃圾收集器 - 泡泡爱编程</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -226,7 +225,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Java内存区域"></span>
+            <span id="subtitle" data-typed-text="经典垃圾收集器"></span>
           
         </div>
 
@@ -237,8 +236,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-01-12 01:28" pubdate>
-          2024年1月12日 凌晨
+        <time datetime="2024-01-23 15:14" pubdate>
+          2024年1月23日 下午
         </time>
       </span>
     
@@ -249,7 +248,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          892 字
+          1.3k 字
         
       </span>
     
@@ -260,7 +259,7 @@
         
         
         
-          8 分钟
+          12 分钟
         
       </span>
     
@@ -305,65 +304,83 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Java内存区域</h1>
+            <h1 id="seo-header">经典垃圾收集器</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="运行时数据区"><a href="#运行时数据区" class="headerlink" title="运行时数据区"></a>运行时数据区</h2><h3 id="1、程序计数器"><a href="#1、程序计数器" class="headerlink" title="1、程序计数器"></a>1、程序计数器</h3><ul>
-<li>是一块较小的内存空间</li>
-<li>字节码解释器通过改变这个计数器的值来选取下一条需要执行的字节码指令</li>
-<li>分支、循环、跳转、异常、线程恢复都需要依赖这个计数器来完成</li>
-<li>每条线程都有一个独立的程序计数器，是线程私有的内存区域</li>
-<li>唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域</li>
-<li>如果线程正在执行的是一个Java方法，记录的是正在执行的字节码指令的地址，如果正在执行native方法，记录的是undefined</li>
+                <h3 id="1、Serial收集器"><a href="#1、Serial收集器" class="headerlink" title="1、Serial收集器"></a>1、Serial收集器</h3><ul>
+<li>单线程工作的收集器。</li>
+<li>所有收集器里额外内存消耗最小的</li>
+<li>新生代采用复制算法，老年代采取标记整理算法</li>
+<li>适用于客户端</li>
 </ul>
-<h3 id="2、Java虚拟机栈"><a href="#2、Java虚拟机栈" class="headerlink" title="2、Java虚拟机栈"></a>2、Java虚拟机栈</h3><ul>
-<li><p>是线程私有的内存区域</p>
-</li>
-<li><p>每个方法执行都会创建一个栈帧，栈帧中存储了局部变量表、操作数栈、动态链接、方法出口等信息，方法从调用到执行完毕对应着一个栈帧在虚拟机栈中从入栈到出栈的过程</p>
-</li>
-<li><p>线程请求的栈深度大于虚拟机所允许的最大深度，会抛出StackOverflowError异常；如果Java虚拟机栈支持动态扩展，当栈扩展时无法申请到足够的内存就会抛出OOM异常</p>
-</li>
+<h3 id="2、ParNew收集器"><a href="#2、ParNew收集器" class="headerlink" title="2、ParNew收集器"></a>2、ParNew收集器</h3><ul>
+<li>Serial收集器的多线程版本</li>
+<li>默认的收集线程数与处理器核心数量相同，可以通过-XX:ParallerGCThreads参数限制垃圾收集的线程数</li>
+<li>用于服务端的新生代收集器，经常和CMS组合使用</li>
 </ul>
-<h4 id="2-1-局部变量表"><a href="#2-1-局部变量表" class="headerlink" title="2.1 局部变量表"></a>2.1 局部变量表</h4><ul>
-<li>用于存放方法参数和方法内部定义的局部变量。</li>
-<li>在Java程序被编译成class文件时，就在方法的Code属性的max_locals数据项中确定了该方法所需分配的局部变量表的最大容量</li>
-<li>以变量槽为最小单位，一个槽占用的内存空间由具体的实现决定，基本数据类型（除long和double）、reference、returnAddress（指向一条字节码指令的地址）占用一个槽，long和double占用2个槽</li>
-<li>JVM通过索引定位的方法访问局部变量表，从0到最大的变量槽数。非static方法0号槽是this，其余的会按照参数列表、方法内部定义的变量顺序和作用域依次分配变量槽</li>
-<li>为了尽可能的减少栈帧所占用的内存空间，局部变量表的变量槽是可以复用的，如果当前程序计数器的值已经超出了某个变量的作用域，这个变量对应的变量槽可以交给其他变量重用</li>
+<h3 id="3、Parallel-Scavenge收集器"><a href="#3、Parallel-Scavenge收集器" class="headerlink" title="3、Parallel Scavenge收集器"></a>3、Parallel Scavenge收集器</h3><ul>
+<li>多线程的新生代收集器，采用标志复制算法，目标是达到一个可控制的吞吐量（用户程序执行的时间&#x2F;CPU总时间）</li>
+<li>最大停顿时间：-XX:MaxGCPauseMillis，吞吐量大小：-XX:GCTimeRatio，自适应的调节策略：-XX:+UseAdaptiveSizePolicy，JVM会根据当前系统运行的情况收集性能监控信息，动态调节新生代的大小、Eden与Survivor区的比例、晋升老年代对象大小等参数以提供最合适的停顿时间和最大的吞吐量</li>
 </ul>
-<h4 id="2-2-操作数栈"><a href="#2-2-操作数栈" class="headerlink" title="2.2 操作数栈"></a>2.2 操作数栈</h4><h3 id="3、本地方法栈"><a href="#3、本地方法栈" class="headerlink" title="3、本地方法栈"></a>3、本地方法栈</h3><ul>
-<li><p>线程私有的内存区域</p>
-</li>
-<li><p>为JVM使用到的本地方法服务</p>
-</li>
-<li><p>HotSpot将本地方法栈和虚拟机栈合二为一</p>
-</li>
-<li><p>在栈深度溢出和栈扩展失败时抛出StackOverflowError和OOM异常</p>
-</li>
+<h3 id="4、Serial-Old收集器"><a href="#4、Serial-Old收集器" class="headerlink" title="4、Serial Old收集器"></a>4、Serial Old收集器</h3><ul>
+<li>单线程的老年代收集器，使用标记整理算法</li>
+<li>主要用于客户端。服务端有2种用途，一是在JDK5以及之前的版本与Parallel Scavenge收集器搭配使用，二是作为CMS收集器在并发收集发生Concurrent Mode Failure时shiyong</li>
 </ul>
-<h3 id="4、堆"><a href="#4、堆" class="headerlink" title="4、堆"></a>4、堆</h3><ul>
-<li><p>所有线程共享的一块内存区域</p>
+<h3 id="5、Parallel-Old收集器"><a href="#5、Parallel-Old收集器" class="headerlink" title="5、Parallel Old收集器"></a>5、Parallel Old收集器</h3><ul>
+<li>多线程的老年代收集器，使用标记整理算法</li>
+<li>在注重吞吐量或者处理器资源较为稀缺的场合，可以优先考虑Parallel Scavenge加Parallel Old组合</li>
+</ul>
+<h3 id="6、CMS"><a href="#6、CMS" class="headerlink" title="6、CMS"></a>6、CMS</h3><ul>
+<li><p>以获取最短回收停顿时间为目标的收集器</p>
 </li>
-<li><p>几乎所有的对象实例都在这里分配内存</p>
+<li><p>收集过程：</p>
+<ul>
+<li><p>初始标记：STW，标记GC ROOTS能直接关联到的对象，速度很快</p>
 </li>
-<li><p>没有内存完成对象分配，也无法扩展时抛出OOM异常</p>
+<li><p>并发标记：从GC Roots的直接关联对象开始遍历整个对象图，垃圾线程和用户线程并发运行</p>
+</li>
+<li><p>重新标记：STW，修正并发标记期间，因用户程序继续运行而导致标记发生变动的那一部分对象的标记记录</p>
+</li>
+<li><p>并发清除：清理标记阶段判断以及死亡的对象，因为不需要移动对象，可以和用户线程并发运行</p>
 </li>
 </ul>
-<h3 id="5、方法区"><a href="#5、方法区" class="headerlink" title="5、方法区"></a>5、方法区</h3><ul>
-<li>线程共享的内存区域</li>
-<li>存储已经被JVM加载的类型信息、常量、静态变量、即时编译器编译过的代码缓存等数据</li>
-<li>如果方法区无法满足新的内存分配需求，将抛出OOM异常</li>
+</li>
+<li><p>缺点：</p>
+<ul>
+<li>对CPU资源非常敏感。垃圾收集时和用户线程并发执行，会因为占有一部分线程导致系统吞吐量降低，默认的线程数是（CPU核数 + 3） &#x2F; 4，当CPU核数不足4个，如果CPU负载很高，当发生垃圾收集时就可能导致用户程序的执行速度忽然大幅度降低</li>
+<li>无法处理浮动垃圾，有可能出现Concurrent Mode Failure失败进而导致Full GC的产生。当CMS运行期间预留的内存无法满足程序分配新对象的需要，就会出现一次并发失败，这时候会冻结用户线程的执行，临时启用Serial Old收集器来进行老年代的垃圾收集</li>
+<li>CMS基于标记清除算法，会有大量的内存碎片产生，可能导致无法找到足够大的连续空间而触发Full GC</li>
 </ul>
-<h3 id="6、运行时常量池"><a href="#6、运行时常量池" class="headerlink" title="6、运行时常量池"></a>6、运行时常量池</h3><ul>
-<li>是方法区的一部分</li>
-<li>存放编译期生成的各种字面量、符号引用和符号引用翻译出来的直接引用，运行期间可以通过String.intern方法将新的常量放入池中</li>
-<li>无法再申请到内存时会抛出OOM异常</li>
+</li>
 </ul>
-<h2 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h2><ul>
-<li>不是运行时数据区的一部分</li>
-<li>受物理内存的限制抛出OOM异常</li>
+<h3 id="7、G1"><a href="#7、G1" class="headerlink" title="7、G1"></a>7、G1</h3><ul>
+<li>基于Region的堆内存布局，把连续的Java堆划分为多个大小相等的Region，每一个Region都可以扮演Eden、Survivor、老年代，收集器能够对扮演不同角色的Region采用不同的策略回收</li>
+<li>采用Humongous区域用来存储大对象，大对象是超过Region容量一半的对象</li>
+<li>将Region作为最小的回收单元，每次回收的内存空间都是Region大小的整数倍，根据设定允许的收集停顿时间，优先回收价值收益最大的那些Region</li>
+<li>运行过程：<ul>
+<li>初始标记：仅仅标记一下GC ROOTS能直接关联的对象，并修改TAMS指针，需要STW，但耗时很短</li>
+<li>并发标记：从GC ROOTS开始对堆中对象进行可达性分析，并重新处理SATB记录下的在并发时有引用变动的对象</li>
+<li>最终标记：需要STW，用于处理并发阶段结束后遗留下的少量SATB记录</li>
+<li>筛选回收：对各个Region的回收价值和成本进行排序，根据用户所期望的停顿时间制定回收计划，把决定回收的Region的存活对象复制到空的Region中，再清理掉旧的Region，。因为涉及到存活对象移动，所以需要STW，由多个线程并行完成。</li>
+</ul>
+</li>
+</ul>
+<h3 id="8、ZGC"><a href="#8、ZGC" class="headerlink" title="8、ZGC"></a>8、ZGC</h3><ul>
+<li>基于Region的堆内存布局，根据容量分类可以分为3种<ul>
+<li>小型Region：容量固定为2M，用于放置小于256KB的小对象</li>
+<li>中型Region：容量固定为32M，用于放置大于等于256KB但小于4M的对象</li>
+<li>大型Region：容量必须为2M的整数倍，用于4M或以上的大对象，每个大型Region中只存放一个大对象</li>
+</ul>
+</li>
+</ul>
+<h4 id="8-1-染色指针"><a href="#8-1-染色指针" class="headerlink" title="8.1 染色指针"></a>8.1 染色指针</h4><p>将少量的额外信息储存在指针中的技术</p>
+<p>优势：</p>
+<ul>
+<li>可以使得一旦某个Region的存活对象被移走之后，这个Region立即就能够被释放和重用掉</li>
+<li>染色指针可以大幅减少在垃圾收集过程中内存屏障的使用数量，ZGC只使用了读屏障</li>
+<li>它可以作为一种可扩展的存储结构用来记录更多与对象标记、重定位过程相关的数据</li>
 </ul>
 
                 
@@ -373,34 +390,6 @@
             <div>
               <div class="post-metas my-3">
   
-    <div class="post-meta mr-3 d-flex align-items-center">
-      <i class="iconfont icon-category"></i>
-      
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/java/" class="category-chain-item">java</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-    </div>
-  
-  
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/jvm/" class="print-no-link">#jvm</a>
-      
-    </div>
   
 </div>
 
@@ -410,8 +399,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Java内存区域</div>
-      <div>https://lccic.github.io/2024/01/12/运行时数据区域/</div>
+      <div>经典垃圾收集器</div>
+      <div>https://lccic.github.io/2024/01/23/经典垃圾收集器/</div>
     </div>
     <div class="license-meta">
       
@@ -423,7 +412,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2024年1月12日</div>
+          <div>2024年1月23日</div>
         </div>
       
       
@@ -455,15 +444,15 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/01/21/%E5%88%A4%E5%AE%9A%E5%AF%B9%E8%B1%A1%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95/" title="判断对象存活算法">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">判断对象存活算法</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
+                    
+                      <a href="/2024/01/21/HotSpot%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82/" title="HotSpot算法实现细节">
+                        <span class="hidden-mobile">HotSpot算法实现细节</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
                     
                   </article>
                 </div>

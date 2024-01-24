@@ -253,6 +253,138 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2024/01/23/%E7%BB%8F%E5%85%B8%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/" target="_self">
+          经典垃圾收集器
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/23/%E7%BB%8F%E5%85%B8%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/" target="_self">
+        <div>
+          1、Serial收集器 单线程工作的收集器。 所有收集器里额外内存消耗最小的 新生代采用复制算法，老年代采取标记整理算法 适用于客户端  2、ParNew收集器 Serial收集器的多线程版本 默认的收集线程数与处理器核心数量相同，可以通过-XX:ParallerGCThreads参数限制垃圾收集的线程数 用于服务端的新生代收集器，经常和CMS组合使用  3、Parallel Scavenge收集
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-01-23 15:14" pubdate>
+              2024-01-23
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/01/21/HotSpot%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82/" target="_self">
+          HotSpot算法实现细节
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/21/HotSpot%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82/" target="_self">
+        <div>
+          1、根节点枚举问题：根节点枚举采用逐个遍历耗费的时间长，所有垃圾收集器在根节点枚举会发生STW，从而导致停顿时间长 解决方案：通过OOpMap解决。当类加载完成后，HotSpot会把对象内什么偏移量上是什么类型的数据计算出来，在即时编译的过程中，也会在特定位置记录下栈里和寄存器里哪些位置是引用。 2、安全点 导致OopMap变化的指令非常多，如果为每一条指令生成OopMap，需要大量额外的存储空间
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-01-21 15:51" pubdate>
+              2024-01-21
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/01/21/%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/" target="_self">
+          垃圾收集算法
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/21/%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/" target="_self">
+        <div>
+          1、分代收集理论（1）弱分代假说：绝大多数对象都是朝生夕灭 （2）强分代假说：熬过越多次垃圾收集的对象越难以消亡 （3）跨代引用假说：跨代引用相比于同代引用仅占极少数。某个新生代对象被老年代对象引用，因为老年代对象难以消亡，新生代对象随着年龄增加也会晋升为老年代，跨代引用随之消除 2、标记清除算法标记出所有需要回收的对象，再统一进行回收 缺点：  标记和清除2个过程的执行效率随对象数量增长而降低
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-01-21 14:04" pubdate>
+              2024-01-21
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/01/21/%E5%88%A4%E5%AE%9A%E5%AF%B9%E8%B1%A1%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95/" target="_self">
+          判断对象存活算法
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/21/%E5%88%A4%E5%AE%9A%E5%AF%B9%E8%B1%A1%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95/" target="_self">
+        <div>
+          1.引用计数算法在对象中添加一个引用计数器，引用增加计数器的值加1，引用失效计数器的值减1，任何时刻对象引用计数器的值为0表示对象可以进行回收 优点：原理简单，判定效率高 缺点：很难解决循环引用问题 2.可达性分析算法从GC Roots出发，根据引用关系向下搜索，搜索过程走过的路径称为引用链，如果GC Roots到某个对象不可达，此对象可以进行回收 可作为GC Roots的对象：  在栈帧中的本地
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-01-21 12:36" pubdate>
+              2024-01-21
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2024/01/12/%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F/" target="_self">
           Java内存区域
         </a>

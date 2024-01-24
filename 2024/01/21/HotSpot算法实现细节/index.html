@@ -24,8 +24,9 @@
 <meta property="og:description" content="1、根节点枚举问题：根节点枚举采用逐个遍历耗费的时间长，所有垃圾收集器在根节点枚举会发生STW，从而导致停顿时间长 解决方案：通过OOpMap解决。当类加载完成后，HotSpot会把对象内什么偏移量上是什么类型的数据计算出来，在即时编译的过程中，也会在特定位置记录下栈里和寄存器里哪些位置是引用。 2、安全点 导致OopMap变化的指令非常多，如果为每一条指令生成OopMap，需要大量额外的存储空间">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-01-21T07:51:35.000Z">
-<meta property="article:modified_time" content="2024-01-23T07:13:12.416Z">
+<meta property="article:modified_time" content="2024-01-24T13:58:18.147Z">
 <meta property="article:author" content="John Doe">
+<meta property="article:tag" content="jvm">
 <meta name="twitter:card" content="summary_large_image">
   
   
@@ -378,6 +379,34 @@
             <div>
               <div class="post-metas my-3">
   
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/java/" class="category-chain-item">java</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/jvm/" class="print-no-link">#jvm</a>
+      
+    </div>
   
 </div>
 
